@@ -13,7 +13,10 @@
 
         <q-toolbar-title> Quasar App </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>
+          Welcome, {{displayName}}
+          <q-btn flat dense round icon="logout" aria-label="logout" @click="logout" />
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -36,10 +39,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth-store";
 import EssentialLink, {
   type EssentialLinkProps
 } from "@/components/EssentialLink.vue";
+
+const authStore = useAuthStore();
+const router = useRouter();
+const $q = useQuasar();
 
 const linksList: EssentialLinkProps[] = [
   {
@@ -90,5 +100,20 @@ const leftDrawerOpen = ref(false);
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+const displayName = computed(() => authStore.user?.username?.trim() || 'My Account');
+
+const logout = () => {
+  $q.dialog({
+    title: 'Logout',
+    message: 'Are you sure you want to logout?',
+    cancel: true,
+    persistent: true
+  })
+    .onOk(async() => {
+      await authStore.logout();
+      void router.push({ name: 'login' });
+    })
 }
 </script>
