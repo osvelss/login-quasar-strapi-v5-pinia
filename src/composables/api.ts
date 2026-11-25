@@ -1,9 +1,24 @@
 import { ofetch } from "ofetch";
 
 let getToken = () => null as string | null;
+let setToken: (token: string | null) => void = () => {};
 
-export const setTokenGetter = (getter: () => string | null) => {
-  getToken = getter;
+interface TokenAccessors {
+  getToken: () => string | null;
+  setToken: (token: string | null) => void;
+}
+
+/**
+ * Registra cómo leer y actualizar el token. Actualizar el token (en lugar de
+ * reemplazar el getter) mantiene sincronizado el store después de un refresco
+ * automático y al cerrar sesión.
+ */
+export const setTokenAccessors = ({
+  getToken: get,
+  setToken: set,
+}: TokenAccessors) => {
+  getToken = get;
+  setToken = set;
 };
 
 const baseURL = `${import.meta.env.QCLI_VITE_APP_BASE_URL}/api`;
@@ -25,7 +40,7 @@ const renewToken = async () => {
       const token = data?.jwt;
 
       if (typeof token === "string" && token) {
-        getToken = () => token;
+        setToken(token);
         return token;
       }
 
@@ -55,6 +70,10 @@ const baseApi = ofetch.create({
     }
 
     options.headers = headers;
+
+    if (import.meta.env.DEV) {
+      console.log("API Request:", request);
+    }
   },
 });
 
